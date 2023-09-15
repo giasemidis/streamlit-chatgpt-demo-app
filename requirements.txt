@@ -1,0 +1,5 @@
+openai
+streamlit
+streamlit-chat
+streamlit-extras
+altair==4.0
