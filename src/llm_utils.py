@@ -37,7 +37,7 @@ def chat_api(
     if "plot" in messages[-1]["content"].lower():
         plot_flag = True
         code_prompt = """
-            Generate the codec <code> for plotting the previous data in plotly,
+            Generate the code <code> for plotting the previous data in plotly,
             in the format requested. The solution should be given using plotly
             and only plotly. Do not use matplotlib.
             Return the code <code> in the following
