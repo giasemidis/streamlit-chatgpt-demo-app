@@ -4,5 +4,5 @@ streamlit-chat
 streamlit-extras
 altair==4.0
 python-dotenv
-# watchdog  # to supress warning
+watchdog  # to supress warning
 pre-commit
