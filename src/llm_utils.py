@@ -5,6 +5,9 @@ import openai
 from dotenv import load_dotenv, find_dotenv
 import streamlit as st
 
+from langchain.agents import create_pandas_dataframe_agent
+from langchain.llms import AzureOpenAI
+
 if os.environ.get('OPENAI_API_KEY') is not None:
     openai.api_key = os.environ['OPENAI_API_KEY']
 else:
@@ -74,3 +77,53 @@ def extract_python_code(text):
     pattern = r'```python\s(.*?)```'
     matches = re.findall(pattern, text, re.DOTALL)
     return matches[0]
+
+
+def chat_with_data_api(df, query, chat_history=[]):
+    """
+    A function that answers data questions from a dataframe.
+
+    A python dataframe agent, `create_pandas_dataframe_agent` works only with
+    Completion API.
+    """
+    os.environ["OPENAI_API_VERSION"] = "2022-12-01"
+    llm = AzureOpenAI(
+        deployment_name="Davinci-003",
+        model_name="text-davinci-003",
+        temperature=0.0
+    )
+    if "plot" in query.lower():
+        prompt = """
+            Generate the code <code> for plotting the following data, <data>, in plotly,
+            in the format requested. The solution should be given using plotly
+            and only plotly. Do not use matplotlib.
+            Return the code <code> in the following
+            format ```python <code>```
+            The <data> is: {data}
+            The question is: {question}
+        """
+        st.write(chat_history[-1])
+        prompt = prompt.format(question=query, data=chat_history[-1])
+        st.write(prompt)
+        answer = llm(prompt)
+        code = extract_python_code(answer)
+        code = code.replace("fig.show()", "")
+        code += """st.plotly_chart(fig, theme='streamlit', use_container_width=True)"""  # noqa: E501
+        st.write(f"```{code}")
+        exec(code)
+    else:
+        prompt = """You are a python expert. You will be given questions for
+            manipulating an input dataframe.
+            If the question asks for a particular country
+            use the `Market` column in the data frame and filter the correspodning
+            country.
+            The available columns are: `{columns}`.
+            Use them for extracting the relevant data.
+            Also, you should be able to create code for plotting the data.
+            Further context is provided here: `{context}`.
+            Here is the question: `{question}`
+        """
+        prompt = prompt.format(question=query, columns=df.columns, context=chat_history)
+        ao_agent = create_pandas_dataframe_agent(llm, df, verbose=True)
+        answer = ao_agent.run(prompt)
+    return answer
