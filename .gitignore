@@ -2,3 +2,4 @@
 src/.env
 *secrets.toml
 *.DS_Store*
+data/
