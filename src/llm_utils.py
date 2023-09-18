@@ -104,13 +104,12 @@ def chat_with_data_api(df, query, chat_history=[]):
         """
         st.write(chat_history[-1])
         prompt = prompt.format(question=query, data=chat_history[-1])
-        st.write(prompt)
         answer = llm(prompt)
         code = extract_python_code(answer)
         code = code.replace("fig.show()", "")
         code += """st.plotly_chart(fig, theme='streamlit', use_container_width=True)"""  # noqa: E501
-        st.write(f"```{code}")
         exec(code)
+        return answer
     else:
         prompt = """You are a python expert. You will be given questions for
             manipulating an input dataframe.
@@ -124,6 +123,9 @@ def chat_with_data_api(df, query, chat_history=[]):
             Here is the question: `{question}`
         """
         prompt = prompt.format(question=query, columns=df.columns, context=chat_history)
-        ao_agent = create_pandas_dataframe_agent(llm, df, verbose=True)
-        answer = ao_agent.run(prompt)
-    return answer
+        ao_agent = create_pandas_dataframe_agent(
+            llm, df, verbose=True, return_intermediate_steps=True)
+        answer = ao_agent(prompt)
+        action = answer["intermediate_steps"][-1][0].tool_input
+        st.write(f"Executed the code ```{action}```")
+        return answer["output"]
