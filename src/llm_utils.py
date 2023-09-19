@@ -102,12 +102,13 @@ def chat_with_data_api(df, query, chat_history=[]):
             The <data> is: {data}
             The question is: {question}
         """
-        st.write(chat_history[-1])
+        # st.write(chat_history[-1])
         prompt = prompt.format(question=query, data=chat_history[-1])
         answer = llm(prompt)
         code = extract_python_code(answer)
         code = code.replace("fig.show()", "")
         code += """st.plotly_chart(fig, theme='streamlit', use_container_width=True)"""  # noqa: E501
+        st.write(f"```{code}")
         exec(code)
         return answer
     else:

@@ -82,7 +82,7 @@ def chatbot():
     Main chatbox function based on ChatCompletion API
     """
 
-    st.title("MARTHA: Your marketing and advertising expert chatbox.")
+    st.title("MARTHA: Your marketing and advertising expert chatbot.")
 
     with st.sidebar:
         model_params = sidebar()

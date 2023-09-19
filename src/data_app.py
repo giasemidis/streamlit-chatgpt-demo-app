@@ -12,8 +12,6 @@ def chat_with_data():
         type=["csv"]
     )
     if uploaded_file is not None:
-        # filename = uploaded_file.name
-        # transcript = StringIO(uploaded_file.getvalue().decode("utf-8")).read()
         df = pd.read_csv(uploaded_file)
     else:
         st.write("Please upload the a file first.")
