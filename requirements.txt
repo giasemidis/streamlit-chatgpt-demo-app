@@ -9,3 +9,4 @@ watchdog  # to supress warning
 pre-commit
 st-pages
 plotly
+tabulate

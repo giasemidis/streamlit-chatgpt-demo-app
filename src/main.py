@@ -79,23 +79,12 @@ def sidebar():
     return out_dict
 
 
-# def on_input_change():
-#     user_input = st.session_state.user_input
-#     st.session_state.past.append(user_input)
-#     st.session_state.generated.append("The messages from Bot\nWith new line")
-
-
-# def on_btn_click():
-#     del st.session_state.past[:]
-#     del st.session_state.generated[:]
-
-
 def chatbot():
     """
     Main chatbox function based on ChatCompletion API
     """
 
-    st.title("Chat and Plot the data")
+    st.title("Chat with and Plot the data")
 
     with st.sidebar:
         model_params = sidebar()
@@ -114,11 +103,8 @@ def chatbot():
         st.session_state["past"] = []
 
     prompt = "You are a chatbot that answers questions. You can also plot data if asked"
-    # prompt = "Answer user's questions"
     if "messages" not in st.session_state:
-        st.session_state["messages"] = [
-            {"role": "system", "content": prompt},
-        ]
+        st.session_state["messages"] = [{"role": "system", "content": prompt}]
 
     user_input = get_text()
 
@@ -133,8 +119,11 @@ def chatbot():
         response = chat_api(st.session_state["messages"], **model_params)
         st.session_state.past.append(user_input)
         if response is not None:
-            st.session_state.generated.append(response["content"])
-            st.session_state["messages"].append(response)
+            st.session_state.generated.append(response)
+            st.session_state["messages"].append({
+                "role": "assistant",
+                "content": response
+            })
 
     if st.session_state["generated"]:
         for i in range(len(st.session_state["generated"]) - 1, -1, -1):
