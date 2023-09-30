@@ -5,9 +5,10 @@ import openai
 from dotenv import load_dotenv, find_dotenv
 import streamlit as st
 
+from langchain.chat_models import ChatOpenAI
 from langchain.agents import AgentType
 from langchain.agents import create_pandas_dataframe_agent
-from langchain.chat_models import ChatOpenAI
+from langchain.schema.output_parser import OutputParserException
 
 if os.environ.get('OPENAI_API_KEY') is not None:
     openai.api_key = os.environ['OPENAI_API_KEY']
@@ -143,8 +144,16 @@ def chat_with_data_api(df, model="gpt-4", temperature=0.0, max_tokens=256, top_p
             handle_parsing_errors=False,
         )
 
-        answer = pandas_df_agent(st.session_state.messages)
-        if answer["intermediate_steps"]:
-            action = answer["intermediate_steps"][-1][0].tool_input["query"]
-            st.write(f"Executed the code ```{action}```")
-        return answer["output"]
+        try:
+            answer = pandas_df_agent(st.session_state.messages)
+            if answer["intermediate_steps"]:
+                action = answer["intermediate_steps"][-1][0].tool_input["query"]
+                st.write(f"Executed the code ```{action}```")
+            return answer["output"]
+        except OutputParserException:
+            error_msg = """OutputParserException error occured in LangChain agent.
+                Refine your query."""
+            return error_msg
+        except:  # noqa: E722
+            answer = "Unknown error occured in LangChain agent. Refine your query"
+            return error_msg
