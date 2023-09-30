@@ -4,7 +4,7 @@
 3. Create an `.env` file inside the `src` directory and paste:
 ```OPENAI_API_KEY = "<YOUR KEY>"```
 
-To run the MARTHA chatbot:
+To run the chatbot:
 ```
 streamlit run src/main.py
 ```
