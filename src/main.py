@@ -3,11 +3,19 @@ from streamlit_chat import message
 from llm_utils import chat_api
 
 
+MAX_LENGTH_MODEL_DICT = {
+    "gpt-4": 8191,
+    "gpt-3.5-turbo": 4096,
+    "gpt-3.5-turbo-16k": 16384
+}
+
+
 def get_text():
     """Input text by the user"""
     input_text = st.text_input(
-        "Ask me your question.",
-        "", key="input"
+        label="Ask me your question.",
+        value="",
+        key="input"
     )
     return input_text
 
@@ -15,42 +23,36 @@ def get_text():
 def sidebar():
     """App sidebar content"""
 
-    model_help = (
-        "The available models for the selected API endpoint. Same prompt might "
-        "return different results for different models. Epxerimentation is "
-        "recommended."
-    )
     model = st.selectbox(
         label="Available Models",
-        options=["gpt-4-32k", "GPT-4", "gpt-35-turbo"],
-        help=model_help
+        options=["gpt-3.5-turbo", "gpt-4", "gpt-3.5-turbo-16k"],
+        help="""The available models. Same prompt might return different results for
+        different models. Epxerimentation is recommended."""
     )
 
     temperature = st.slider(
         label="Temperature",
         value=0.0,
         min_value=0.,
-        max_value=1.,
+        max_value=2.,
         step=0.01,
         help=(
-            "Controls randomness. Lowering the temperature means that the model "
-            "will produce more repetitive and deterministic responses. Increasing "
-            "the temperature will result in more unexpected or creative responses. "
-            "Try adjusting temperature or Top P but not both."
+            """Controls randomness. What sampling temperature to use, between 0 and 2.
+            Higher values like 0.8 will make the output more random, while lower values
+            like 0.2 will make it more focused and deterministic.
+            It is recommended to alter this or `top_n` but not both"""
         )
     )
     max_tokens = st.slider(
-        label="Max length (tokens)",
-        value=3_000,
+        label="Maximum length (tokens)",
+        value=256,
         min_value=0,
-        max_value=8_192,
+        max_value=MAX_LENGTH_MODEL_DICT[model],
         step=1,
         help=(
-            "Set a limit on the number of tokens per model response. The API "
-            "supports a maximum of 8192 tokens shared between the prompt "
-            "(including system message, examples, message history, and user query) "
-            "and the model's response. One token is roughly 4 characters for "
-            "typical English text."
+            """The maximum number of tokens to generate in the chat completion.
+            The total length of input tokens and generated tokens is limited by
+            the model's context length."""
         )
 
     )
@@ -61,15 +63,15 @@ def sidebar():
         max_value=1.0,
         step=0.01,
         help=(
-            "Similar to temperature, this controls randomness but uses a different "
-            "method. Lowering Top P will narrow the model’s token selection to "
-            "likelier tokens. Increasing Top P will let the model choose from "
-            "tokens with both high and low likelihood. Try adjusting temperature "
-            "or Top P but not both."
+            """An alternative to sampling with temperature, called nucleus sampling,
+            where the model considers the results of the tokens with top_p probability
+            mass. So 0.1 means only the tokens comprising the top 10% probability
+            mass are considered.
+            It is recommended to alter this or `temperature` but not both"""
         )
     )
     out_dict = {
-        "engine": model,
+        "model": model,
         "temperature": temperature,
         "max_tokens": max_tokens,
         "top_p": top_p,
@@ -77,24 +79,31 @@ def sidebar():
     return out_dict
 
 
+# def on_input_change():
+#     user_input = st.session_state.user_input
+#     st.session_state.past.append(user_input)
+#     st.session_state.generated.append("The messages from Bot\nWith new line")
+
+
+# def on_btn_click():
+#     del st.session_state.past[:]
+#     del st.session_state.generated[:]
+
+
 def chatbot():
     """
     Main chatbox function based on ChatCompletion API
     """
 
-    st.title("MARTHA: Your marketing and advertising expert chatbot.")
+    st.title("Chat and Plot the data")
 
     with st.sidebar:
         model_params = sidebar()
 
     greeting_bot_msg = (
-        "Hi, I am MARTHA, your marketing & advertising expert. "
-        "Ask me any related question.\n"
-        "Ah! I have no knowledge of 2022 onwards, because I am powered by "
-        "ChatGPT. So, I don't do predictions.\n"
-        "*Example*: 'What are the implications of the death of third party "
-        "cookies for the industry?'\n"
-        "I don't answer questions like 'Who was US president in 2010?'"
+        "Hi, I am not a just a chatbot. I can plot fetched data for you. "
+        "Ask me questions like 'What was US, UK and Germany's GDP in 2019 and 2020?'. "
+        "Once the data is received, ask me to plot it."
     )
 
     # Storing the chat
@@ -104,12 +113,7 @@ def chatbot():
     if "past" not in st.session_state:
         st.session_state["past"] = []
 
-    prompt = (
-        "Classify if the following prompt questions are related to marketing "
-        "and advertising. If they are, answer the question. If they are not, "
-        "reply only 'This is not a marketing question' and do not answer the "
-        "question. Allow any questions about plots."
-    )
+    prompt = "You are a chatbot that answers questions. You can also plot data if asked"
     # prompt = "Answer user's questions"
     if "messages" not in st.session_state:
         st.session_state["messages"] = [
@@ -117,6 +121,10 @@ def chatbot():
         ]
 
     user_input = get_text()
+
+    if ((len(st.session_state["past"]) > 0)
+            and (user_input == st.session_state["past"][-1])):
+        user_input = ""
 
     if user_input:
         st.session_state["messages"].append(

@@ -1,4 +1,5 @@
 openai
+langchain
 streamlit
 streamlit-chat
 streamlit-extras
@@ -7,3 +8,4 @@ python-dotenv
 watchdog  # to supress warning
 pre-commit
 st-pages
+plotly
